@@ -18,6 +18,7 @@ def getAllGames():
             gameJSON["id"] = game.id
             gameJSON["title"] = game.title
             gameJSON["descriptionURL"] = game.descriptionURL
+            gameJSON["price"] = game.price
             gameJSON["imageURL"] = game.imageURL
             gameJSON["rating"] = game.rating
             gameJSON["type"] = game.type
@@ -50,6 +51,7 @@ def getGame():
         gameJSON["id"] = game.id
         gameJSON["title"] = game.title
         gameJSON["descriptionURL"] = game.descriptionURL
+        gameJSON["price"] = game.price
         gameJSON["imageURL"] = game.imageURL
         gameJSON["rating"] = game.rating
         gameJSON["type"] = game.type
@@ -68,11 +70,12 @@ def postGame():
         descriptionURL = request.headers.get("descriptionURL")
         imageURL = request.headers.get("imageURL")
         rating = request.headers.get("rating")
+        price = request.headers.get("price")
         type = request.headers.get("type")
         genre = request.headers.get("genre")
         quantity = request.headers.get("quantity")
 
-        game = Game(title = title, descriptionURL = descriptionURL, imageURL = imageURL, rating = rating, type = type, genre = genre, quantity = quantity)
+        game = Game(title = title, descriptionURL = descriptionURL, imageURL = imageURL, rating = rating, price = price, type = type, genre = genre, quantity = quantity)
 
         db.session.add(game)
         db.session.commit()
@@ -81,3 +84,48 @@ def postGame():
 
     except:
         return jsonify({"error#1337": "Game could not be saved"})
+
+@app.route('/api/game/update/<id>', methods=['GET', 'PATCH'])
+def updateGame(id=-1):
+    try:
+        title = request.headers.get("title")
+        descriptionURL = request.headers.get("descriptionURL")
+        imageURL = request.headers.get("imageURL")
+        price = request.headers.get("price")
+        rating = request.headers.get("rating")
+        type = request.headers.get("type")
+        genre = request.headers.get("genre")
+        quantity = request.headers.get("quantity")
+
+        data = {}
+        if title:
+            # game.title = title
+            data["title"] = title
+        if descriptionURL:
+            # game.descriptionURL = descriptionURL
+            data["descriptionURL"] = descriptionURL
+        if imageURL:
+            # game.imageURL = imageURL
+            data["imageURL"] = imageURL
+        if price:
+            # game.price = price
+            data["price"] = price
+        if rating:
+            # game.rating = rating
+            data["rating"] = rating
+        if type:
+            # game.type = type
+            data["type"] = type
+        if genre:
+            # game.genre = genre
+            data["genre"] = genre
+        if quantity:
+            # game.quantity = quantity
+            data["quantity"] = quantity
+
+        Game.query.filter_by(id = id).update(data)
+
+        return jsonify({ "Success" : "game updated" })
+
+    except:
+        return jsonify({ "error#80085": "Failed To Update" })
