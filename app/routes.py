@@ -99,33 +99,47 @@ def updateGame(id=-1):
 
         data = {}
         if title:
-            # game.title = title
             data["title"] = title
         if descriptionURL:
-            # game.descriptionURL = descriptionURL
             data["descriptionURL"] = descriptionURL
         if imageURL:
-            # game.imageURL = imageURL
             data["imageURL"] = imageURL
         if price:
-            # game.price = price
             data["price"] = price
         if rating:
-            # game.rating = rating
             data["rating"] = rating
         if type:
-            # game.type = type
             data["type"] = type
         if genre:
-            # game.genre = genre
             data["genre"] = genre
         if quantity:
-            # game.quantity = quantity
             data["quantity"] = quantity
 
         Game.query.filter_by(id = id).update(data)
+        db.session.commit()
 
         return jsonify({ "Success" : "game updated" })
 
     except:
         return jsonify({ "error#80085": "Failed To Update" })
+
+@app.route('/api/game/delete/<id>', methods=['GET', 'DELETE'])
+def deleteGame(id=-1):
+    try:
+        Game.query.filter_by(id=id).delete
+
+        return jsonify({ "Success" : "game killed" })
+    except:
+        return jsonify({ "error#010101010101": "Failed To Delete" })
+
+@app.route('/api/game/checkout/<id>', methods=['GET', 'PATCH'])
+def checkout(id=-1):
+    try:
+        if Game.query.filter_by(id=id).first().quantity:
+            newStock = Game.query.filter_by(id=id).first().quantity - 1
+            Game.query.filter_by(id=id).update({ "quantity": newStock })
+            db.session.commit()
+
+        return jsonify({ 'Success': 'game checked out' })
+    except:
+        return jsonify({ "error#1675309": 'failed to update' })
