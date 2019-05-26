@@ -34,15 +34,15 @@ def getAllGames():
 @app.route('/api/game', methods=['GET', 'POST'])
 def getGame():
     try:
-        id = request.headers.get('id')
-        title = request.headers.get('title')
+        args = request.args
+
+        id = args.get("id")
+        title = args.get('title')
 
         gameJSON = {}
-        print(id, title)
 
         if id and not title:
             game = Game.query.filter_by(id = id).first()
-            print(game)
         elif not id and title:
             game = Game.query.filter_by(title = title).first()
         else:
@@ -149,11 +149,11 @@ def getCart():
     try:
         data = []
 
-        for game in Cart.query.all():
+        for item in Cart.query.all():
             cartJSON = {}
-            cartJSON["id"] = game.id
-            cartJSON["game_id"] = game.game_id
-            cartJSON["quantity"] = game.quantity
+            cartJSON["id"] = item.id
+            cartJSON["game_id"] = item.game_id
+            cartJSON["quantity"] = item.quantity
             data.append(cartJSON)
 
         return jsonify(data)
