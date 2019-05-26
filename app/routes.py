@@ -1,13 +1,13 @@
 from app import app, db
 from flask import request, jsonify
-from app.models import Game
+from app.models import Game, Cart
 
 # set index route to return nothing, just so no error
 @app.route('/')
 def index():
     return ''
 
-@app.route('/api/games', methods=['GET', 'POST'])
+@app.route('/api/games', methods=['GET'])
 def getAllGames():
     try:
 
@@ -143,3 +143,89 @@ def checkout(id=-1):
         return jsonify({ 'Success': 'game checked out' })
     except:
         return jsonify({ "error#1675309": 'failed to update' })
+
+@app.route('/api/cart', methods=['GET'])
+def getCart():
+    try:
+        data = []
+
+        for game in Cart.query.all():
+            cartJSON = {}
+            cartJSON["id"] = game.id
+            cartJSON["game_id"] = game.game_id
+            cartJSON["quantity"] = game.quantity
+            data.append(cartJSON)
+
+        return jsonify(data)
+
+    except:
+        return jsonify({ 'error#7734': "Failed to get cart" })
+
+@app.route('/api/cart/save', methods=['GET', 'POST'])
+def addToCart(game_id=-1):
+    try:
+        game_id = request.headers.get("game_id")
+
+        cart = Cart(game_id = game_id, quantity = 1)
+        db.session.add(cart)
+        db.session.commit()
+
+        return jsonify({ "Success" : "Game added to cart" })
+    except:
+        return jsonify({ 'error#101101101101': "Failed to get cart" })
+
+@app.route('/api/cart/remove/<id>')
+def removeFromCart(id=-1):
+    try:
+        Cart.query.filter_by(id=id).delete
+
+        return jsonify({ "Success" : "game expelled from cart" })
+    except:
+        return jsonify({ 'error#101101101101': "Failed to delete from cart" })
+
+@app.route('/api/cart/checkout/<id>')
+def checkoutGameFromCart(id=-1):
+    try:
+        cartItem = Cart.query.filter_by(id=id).first()
+        game = Game.query.filter_by(id=cartItem.game_id).first()
+
+        Game.query.filter_by(id = game.game_id).update({ "quantity": game.quantity - cartItem.quantity })
+
+        Cart.query.filter_by(id=id).delete
+
+        return jsonify({ "Success" : "game expelled from cart" })
+    except:
+        return jsonify({ 'error#101101101101': "Failed to delete from cart" })
+
+@app.route('/api/cart/quantity/<id>', methods=["GET", "PATCH"])
+def updateGameQuantity(id=-1):
+    try:
+        method = request.headers.get("method")
+        cartItem = Cart.query.filter_by(id = id).first()
+
+        if method == "More":
+            Cart.query.filter_by(id = id).update({ "quantity": cartItem.quantity + 1 })
+        else:
+            Cart.query.filter_by(id = id).update({ "quantity": cartItem.quantity - 1 })
+
+        db.session.commit()
+
+        return jsonify({ "Success" : "cart game update" })
+    except:
+        return jsonify({ 'error#0000000000000001': 'cart game failed to update' })
+
+@app.route('/api/cart/game/<id>', methods=["GET"])
+def getCartGame(id=-1):
+    try:
+        cartItem = {}
+
+        query = Cart.query.filter_by(id = id).first()
+
+        if query:
+            cartItem["id"] = query.id
+            cartItem["game_id"] = query.game_id
+            cartItem["quantity"] = query.quantity
+
+        return jsonify(cartItem)
+    except:
+        return jsonify({ 'error#12357913': 'cart game not found' })
