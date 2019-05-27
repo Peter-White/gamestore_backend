@@ -128,6 +128,13 @@ def deleteGame(id=-1):
     try:
         game = Game.query.filter_by(id=id).first()
 
+        cart = Cart.query.filter_by(game_id = id).all()
+
+        if cart:
+            for game in cart:
+                db.session.delete(game)
+                db.session.commit()
+
         db.session.delete(game);
         db.session.commit();
 
@@ -135,17 +142,6 @@ def deleteGame(id=-1):
     except:
         return jsonify({ "error#010101010101": "Failed To Delete" })
 
-@app.route('/api/game/checkout/<id>', methods=['GET', 'PATCH'])
-def checkout(id=-1):
-    try:
-        if Game.query.filter_by(id=id).first().quantity:
-            newStock = Game.query.filter_by(id=id).first().quantity - 1
-            Game.query.filter_by(id=id).update({ "quantity": newStock })
-            db.session.commit()
-
-        return jsonify({ 'Success': 'game checked out' })
-    except:
-        return jsonify({ "error#1675309": 'failed to update' })
 
 @app.route('/api/cart', methods=['GET'])
 def getCart():
@@ -191,15 +187,20 @@ def removeFromCart():
     except:
         return jsonify({ 'error#101101101101': "Failed to delete from cart" })
 
-@app.route('/api/cart/checkout/<id>', methods=['GET', 'DELETE'])
+@app.route('/api/cart/checkout', methods=['GET', 'DELETE'])
 def checkoutGameFromCart(id=-1):
     try:
+        id = request.headers.get("id")
+
         cartItem = Cart.query.filter_by(id=id).first()
         game = Game.query.filter_by(id=cartItem.game_id).first()
 
-        Game.query.filter_by(id = game.game_id).update({ "quantity": game.quantity - cartItem.quantity })
+        if game.quantity:
+            newQuant = game.quantity - cartItem.quantity
 
-        Cart.query.filter_by(id=id).delete
+            Game.query.filter_by(id = game.id).update({ "quantity": newQuant })
+
+        db.session.delete(cartItem)
         db.session.commit()
 
         return jsonify({ "Success" : "game expelled from cart" })
